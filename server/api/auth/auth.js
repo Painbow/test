@@ -53,7 +53,7 @@ router.post('/signUp', async (req, res) => {
     try {
         const user = await prisma.user.create({ data: userData });
         accountData.userID = user.userID;
-        accountData.accountType = "Bidder";
+        accountData.accountType = "bidder";
         accountData.accountStatus = "Active";
         const hashedPassword = await bcrypt.hash(accountData.password, saltRounds);
         accountData.password = hashedPassword;
@@ -134,7 +134,7 @@ router.post('/login', async (req, res) => {
         // Send temporary token as a cookie
         res.cookie('tempToken', tempToken, { httpOnly: true, secure: true, sameSite: 'None' });
 
-        return res.json({ message: 'OTP sent successfully. Please check your email.' });
+        return res.status(200).json({ message: 'OTP sent successfully. Please check your email.' });
 
     } catch (error) {
         console.error(error);
@@ -180,8 +180,27 @@ router.post('/otp', async (req, res) => {
         res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'None' });
         res.clearCookie('tempToken');
 
-        return res.json({ message: 'Logged in successfully.' });
+        return res.json({ accountType: account.accountType, message: 'Logged in successfully.' });
 
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.get('/user', async (req, res) => {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await prisma.account.findUnique({
+            where: { accountID: payload.accountID },
+            select: { accountType: true },
+        });
+
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        return res.json(user);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Server error' });

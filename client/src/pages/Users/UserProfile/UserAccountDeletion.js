@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import axios from 'axios';
 import { Modal, Button } from 'react-bootstrap';
 import { useNavigate } from "react-router-dom";
 import './styles.css';
+import * as api from '../../../utils/UserProfileAPI';
 
-const UserAccountDeletion = ({ account }) => {
+const UserAccountDeletion = () => {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   // Get the navigate function from the hook
@@ -14,23 +14,18 @@ const UserAccountDeletion = ({ account }) => {
     setShowConfirmationModal(true);
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     // Make an HTTP DELETE request to delete the account
-    axios.delete('http://localhost:5000/api/users/deleteAccount', { withCredentials: true })
-      .then(response => {
-        // Handle a successful deletion
+    try {
+      const response = await api.deleteUser();
+      if (response.status === 200) {
         console.log("Account deleted successfully");
-
-        // Display the success message modal
         setShowSuccessModal(true);
+      }
 
-        // Close the confirmation modal
-        setShowConfirmationModal(false);
-      })
-      .catch(error => {
-        // Handle any errors during the deletion process
-        console.error("Failed to delete account:", error);
-      });
+    } catch (error) {
+      console.error("Failed to delete account:", error);
+    }
 
     // Close the confirmation modal
     setShowConfirmationModal(false);
@@ -62,7 +57,7 @@ const UserAccountDeletion = ({ account }) => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseConfirmation}>Cancel</Button>
-          <Button variant="danger" onClick={handleDeleteAccount}>Delete Account</Button>
+          <Button variant="danger" className="UserProfileForm-button" onClick={handleDeleteAccount}>Delete Account</Button>
         </Modal.Footer>
       </Modal>
       <Modal show={showSuccessModal} onHide={handleCloseSuccessModal}>
@@ -73,7 +68,7 @@ const UserAccountDeletion = ({ account }) => {
           <p>Account deleted successfully! Close this message to be redirected to Login.</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleCloseSuccessModal}>Close</Button>
+          <Button variant="primary" className="UserProfileForm-button" onClick={handleCloseSuccessModal}>Close</Button>
         </Modal.Footer>
       </Modal>
     </div>
